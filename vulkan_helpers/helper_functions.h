@@ -170,8 +170,13 @@ VkDescriptorSetLayout CreateDescriptorSetLayout(
     containers::Allocator* allocator, VkDevice* device,
     std::initializer_list<VkDescriptorSetLayoutBinding> bindings);
 
-// Creates a descriptor pool with the given pool sizes. At maximum, |max_sets|
-// number of descriptor sets can be allocated from this pool.
+// Creates a DescriptorSetLayout with the given set of layouts.
+VkDescriptorSetLayout CreateDescriptorSetLayout(
+    containers::Allocator* allocator, VkDevice* device,
+    const containers::vector<VkDescriptorSetLayoutBinding>& bindings);
+
+// Creates a descriptor pool with the given pool sizes. At maximum,
+// |max_sets| number of descriptor sets can be allocated from this pool.
 VkDescriptorPool CreateDescriptorPool(VkDevice* device, uint32_t num_pool_size,
                                       const VkDescriptorPoolSize* pool_sizes,
                                       uint32_t max_sets);

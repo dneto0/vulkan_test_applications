@@ -28,21 +28,6 @@ uint32_t compute_shader[] =
 #include "double_numbers.comp.spv"
     ;
 
-namespace {
-
-std::vector<uint32_t> GetHostVisibleBufferData(
-    vulkan::VulkanApplication::Buffer* buf) {
-  buf->invalidate();
-  uint32_t* p = reinterpret_cast<uint32_t*>(buf->base_address());
-  std::vector<uint32_t> data;
-  data.reserve(static_cast<size_t>(
-    buf->size() / static_cast<VkDeviceSize>(sizeof(uint32_t))));
-  std::for_each(p, p + buf->size() / sizeof(uint32_t),
-                [&data](uint32_t w) { data.push_back(w); });
-  return data;
-}
-}  // anonymous namespace
-
 int main_entry(const entry::entry_data* data) {
   data->log->LogInfo("Application Startup");
 
@@ -142,7 +127,8 @@ int main_entry(const entry::entry_data* data) {
                    &cmd_buf, &app.render_queue()));
 
     // Check the output values
-    std::vector<uint32_t> output = GetHostVisibleBufferData(&*out_buffer);
+    std::vector<uint32_t> output =
+        vulkan::GetHostVisibleBufferData(&*out_buffer);
     std::for_each(output.begin(), output.end(),
                   [data](uint32_t w) { LOG_EXPECT(==, data->log, 2, w); });
   }
@@ -191,7 +177,8 @@ int main_entry(const entry::entry_data* data) {
                    &cmd_buf, &app.render_queue()));
 
     // Check the output values
-    std::vector<uint32_t> output = GetHostVisibleBufferData(&*out_buffer);
+    std::vector<uint32_t> output =
+        vulkan::GetHostVisibleBufferData(&*out_buffer);
     std::for_each(output.begin(), output.end(),
                   [data](uint32_t w) { LOG_EXPECT(==, data->log, 2, w); });
   }

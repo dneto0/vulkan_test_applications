@@ -16,6 +16,8 @@
 #ifndef VULKAN_HELPERS_VULKAN_APPLICATION
 #define VULKAN_HELPERS_VULKAN_APPLICATION
 
+#include <algorithm>
+
 #include "support/containers/allocator.h"
 #include "support/containers/ordered_multimap.h"
 #include "support/containers/vector.h"
@@ -243,6 +245,36 @@ class PipelineLayout {
                                                  &layout));
     pipeline_layout_.initialize(layout);
   }
+  PipelineLayout(containers::Allocator* allocator, VkDevice* device,
+                 const containers::vector<
+                     containers::vector<VkDescriptorSetLayoutBinding>>& layouts)
+      : pipeline_layout_(VK_NULL_HANDLE, nullptr, device),
+        descriptor_set_layouts_(allocator) {
+    containers::vector<::VkDescriptorSetLayout> raw_layouts(allocator);
+    raw_layouts.reserve(layouts.size());
+
+    descriptor_set_layouts_.reserve(layouts.size());
+    for (auto binding_list : layouts) {
+      descriptor_set_layouts_.emplace_back(
+          CreateDescriptorSetLayout(allocator, device, binding_list));
+      raw_layouts.push_back(descriptor_set_layouts_.back());
+    }
+    VkPipelineLayoutCreateInfo create_info = {
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,  // sType
+        nullptr,                                        // pNext
+        0,                                              // flags
+        static_cast<uint32_t>(raw_layouts.size()),      // setLayoutCount
+        raw_layouts.data(),                             // pSetLayouts
+        0,        // pushConstantRangeCount
+        nullptr,  // pPushConstantRanges
+    };
+
+    ::VkPipelineLayout layout;
+    LOG_ASSERT(==, device->GetLogger(), VK_SUCCESS,
+               (*device)->vkCreatePipelineLayout(*device, &create_info, nullptr,
+                                                 &layout));
+    pipeline_layout_.initialize(layout);
+  }
   friend class VulkanApplication;
   containers::vector<VkDescriptorSetLayout> descriptor_set_layouts_;
   VkPipelineLayout pipeline_layout_;
@@ -265,10 +297,20 @@ class DescriptorSet {
       containers::Allocator* allocator, VkDevice* device,
       std::initializer_list<VkDescriptorSetLayoutBinding> bindings);
 
+  static VkDescriptorPool CreateDescriptorPool(
+      containers::Allocator* allocator, VkDevice* device,
+      const containers::vector<VkDescriptorSetLayoutBinding>& bindings);
+
   // Creates a descriptor set with one descriptor according to the given
   // |binding|.
   DescriptorSet(containers::Allocator* allocator, VkDevice* device,
                 std::initializer_list<VkDescriptorSetLayoutBinding> bindings);
+
+  // Creates a descriptor set with one descriptor according to the given
+  // |binding|.
+  DescriptorSet(
+      containers::Allocator* allocator, VkDevice* device,
+      const containers::vector<VkDescriptorSetLayoutBinding>& bindings);
 
   // Pools is designed to amortize the cost of descriptor set allocation.
   // But here we create a dedicated pool for each descriptor set. It suffers
@@ -602,10 +644,25 @@ class VulkanApplication {
     return PipelineLayout(allocator_, &device_, layouts);
   }
 
+  // Creates and returns a PipelineLayout from the given
+  // DescriptorSetLayoutBindings
+  PipelineLayout CreatePipelineLayout(
+      const containers::vector<
+          containers::vector<VkDescriptorSetLayoutBinding>>& layouts) {
+    return PipelineLayout(allocator_, &device_, layouts);
+  }
+
   // Allocates a descriptor set with one descriptor according to the given
   // |binding|.
   DescriptorSet AllocateDescriptorSet(
       std::initializer_list<VkDescriptorSetLayoutBinding> bindings) {
+    return DescriptorSet(allocator_, &device_, bindings);
+  }
+
+  // Allocates a descriptor set with one descriptor according to the given
+  // |binding|.
+  DescriptorSet AllocateDescriptorSet(
+      const containers::vector<VkDescriptorSetLayoutBinding>& bindings) {
     return DescriptorSet(allocator_, &device_, bindings);
   }
 
@@ -718,6 +775,18 @@ class VulkanApplication {
   containers::vector<::VkImage> swapchain_images_;
   std::atomic<bool> should_exit_;
 };
+
+inline std::vector<uint32_t> GetHostVisibleBufferData(
+    vulkan::VulkanApplication::Buffer* buf) {
+  buf->invalidate();
+  uint32_t* p = reinterpret_cast<uint32_t*>(buf->base_address());
+  std::vector<uint32_t> data;
+  data.reserve(static_cast<size_t>(
+      buf->size() / static_cast<VkDeviceSize>(sizeof(uint32_t))));
+  std::for_each(p, p + buf->size() / sizeof(uint32_t),
+                [&data](uint32_t w) { data.push_back(w); });
+  return data;
+}
 
 using BufferPointer = containers::unique_ptr<VulkanApplication::Buffer>;
 using ImagePointer = containers::unique_ptr<VulkanApplication::Image>;

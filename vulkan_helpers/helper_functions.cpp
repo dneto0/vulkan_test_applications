@@ -812,6 +812,21 @@ VkDescriptorSetLayout CreateDescriptorSetLayout(
   return VkDescriptorSetLayout(layout, nullptr, device);
 }
 
+VkDescriptorSetLayout CreateDescriptorSetLayout(
+    containers::Allocator* allocator, VkDevice* device,
+    const containers::vector<VkDescriptorSetLayoutBinding>& bindings) {
+  VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info{
+      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, nullptr, 0,
+      static_cast<uint32_t>(bindings.size()), bindings.data()};
+
+  ::VkDescriptorSetLayout layout;
+  LOG_ASSERT(
+      ==, device->GetLogger(), VK_SUCCESS,
+      (*device)->vkCreateDescriptorSetLayout(
+          *device, &descriptor_set_layout_create_info, nullptr, &layout));
+  return VkDescriptorSetLayout(layout, nullptr, device);
+}
+
 // Creates a default pipeline cache, it does not load anything from disk.
 VkPipelineCache CreateDefaultPipelineCache(VkDevice* device) {
   ::VkPipelineCache cache = VK_NULL_HANDLE;
@@ -952,7 +967,7 @@ void RecordImageLayoutTransition(
           nullptr,                             // pBufferMemoryBarriers
           1,                                   // imageMemoryBarrierCount
           &image_memory_barrier                // pImageMemoryBarriers
-          );
+      );
 }
 
 namespace {

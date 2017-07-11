@@ -54,6 +54,33 @@ DescriptorSet::DescriptorSet(
       set_(AllocateDescriptorSet(device, pool_.get_raw_object(),
                                  layout_.get_raw_object())) {}
 
+VkDescriptorPool DescriptorSet::CreateDescriptorPool(
+    containers::Allocator* allocator, VkDevice* device,
+    const containers::vector<VkDescriptorSetLayoutBinding>& bindings) {
+  containers::unordered_map<uint32_t, uint32_t> counts(allocator);
+  for (auto binding : bindings) {
+    counts[static_cast<uint32_t>(binding.descriptorType)] +=
+        binding.descriptorCount;
+  }
+
+  containers::vector<VkDescriptorPoolSize> pool_sizes(allocator);
+  pool_sizes.reserve(counts.size());
+  for (auto p : counts) {
+    pool_sizes.push_back({static_cast<VkDescriptorType>(p.first), p.second});
+  }
+
+  return vulkan::CreateDescriptorPool(
+      device, static_cast<uint32_t>(pool_sizes.size()), pool_sizes.data(), 1);
+}
+
+DescriptorSet::DescriptorSet(
+    containers::Allocator* allocator, VkDevice* device,
+    const containers::vector<VkDescriptorSetLayoutBinding>& bindings)
+    : pool_(CreateDescriptorPool(allocator, device, bindings)),
+      layout_(CreateDescriptorSetLayout(allocator, device, bindings)),
+      set_(AllocateDescriptorSet(device, pool_.get_raw_object(),
+                                 layout_.get_raw_object())) {}
+
 VulkanApplication::VulkanApplication(
     containers::Allocator* allocator, logging::Logger* log,
     const entry::entry_data* entry_data,
@@ -225,9 +252,10 @@ VulkanApplication::VulkanApplication(
         VK_IMAGE_LAYOUT_UNDEFINED,            // initialLayout
     };
     ::VkImage image;
-    LOG_ASSERT(==, log_, device_->vkCreateImage(device_, &image_create_info,
-                                                nullptr, &image),
-               VK_SUCCESS);
+    LOG_ASSERT(
+        ==, log_,
+        device_->vkCreateImage(device_, &image_create_info, nullptr, &image),
+        VK_SUCCESS);
     VkMemoryRequirements requirements;
     device_->vkGetImageMemoryRequirements(device_, image, &requirements);
     device_->vkDestroyImage(device_, image, nullptr);
@@ -407,8 +435,9 @@ VulkanApplication::FillImageLayersData(
     std::initializer_list<::VkSemaphore> wait_semaphores,
     std::initializer_list<::VkSemaphore> signal_semaphores, ::VkFence fence) {
   auto failure_return = std::make_tuple(
-      false, VkCommandBuffer(static_cast<::VkCommandBuffer>(VK_NULL_HANDLE),
-                             &command_pool_, &device_),
+      false,
+      VkCommandBuffer(static_cast<::VkCommandBuffer>(VK_NULL_HANDLE),
+                      &command_pool_, &device_),
       BufferPointer(nullptr));
   if (!img) {
     log_->LogError("FillImageLayersData(): The given *img is nullptr");
@@ -474,8 +503,11 @@ VulkanApplication::FillImageLayersData(
       *img,
       // subresource range, only deal one mip level
       {
-          image_subresource.aspectMask, image_subresource.mipLevel, 1,
-          image_subresource.baseArrayLayer, image_subresource.layerCount,
+          image_subresource.aspectMask,
+          image_subresource.mipLevel,
+          1,
+          image_subresource.baseArrayLayer,
+          image_subresource.layerCount,
       }};
   command_buffer->vkCmdPipelineBarrier(
       command_buffer, VK_PIPELINE_STAGE_HOST_BIT,
@@ -662,8 +694,11 @@ bool VulkanApplication::DumpImageLayersData(
       *img,
       // subresource range, only deal with one mip level
       {
-          image_subresource.aspectMask, image_subresource.mipLevel, 1,
-          image_subresource.baseArrayLayer, image_subresource.layerCount,
+          image_subresource.aspectMask,
+          image_subresource.mipLevel,
+          1,
+          image_subresource.baseArrayLayer,
+          image_subresource.layerCount,
       }};
   command_buffer->vkCmdPipelineBarrier(
       command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
