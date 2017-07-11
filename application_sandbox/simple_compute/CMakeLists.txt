@@ -14,7 +14,9 @@
 
 add_shader_library(simple_compute_shaders
   SOURCES
+    add_numbers.comp
     add_numbers4.comp
+    add_numbers23.comp
   SHADER_DEPS
     shader_library
 )

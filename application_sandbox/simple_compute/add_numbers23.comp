@@ -1,0 +1,122 @@
+/* Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#version 430
+
+layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+
+layout (set = 0, binding = 0) buffer a_buffer {
+  uint adata[];
+};
+
+layout (set = 0, binding = 1) buffer b_buffer {
+  uint bdata[];
+};
+
+layout (set = 0, binding = 2) buffer  c_buffer {
+  uint cdata[];
+};
+
+layout (set = 0, binding = 3) buffer  d_buffer {
+  uint ddata[];
+};
+
+layout (set = 0, binding = 4) buffer  e_buffer {
+  uint edata[];
+};
+layout (set = 0, binding = 5) buffer  f_buffer {
+  uint fdata[];
+};
+layout (set = 0, binding = 6) buffer  g_buffer {
+  uint gdata[];
+};
+layout (set = 0, binding = 7) buffer  h_buffer {
+  uint hdata[];
+};
+layout (set = 0, binding = 8) buffer  i_buffer {
+  uint idata[];
+};
+layout (set = 0, binding = 9) buffer  j_buffer {
+  uint jdata[];
+};
+layout (set = 0, binding = 10) buffer  k_buffer {
+  uint kdata[];
+};
+layout (set = 0, binding = 11) buffer  l_buffer {
+  uint ldata[];
+};
+layout (set = 0, binding = 12) buffer  m_buffer {
+  uint mdata[];
+};
+layout (set = 0, binding = 13) buffer  n_buffer {
+  uint ndata[];
+};
+layout (set = 0, binding = 14) buffer  o_buffer {
+  uint odata[];
+};
+layout (set = 0, binding = 15) buffer  p_buffer {
+  uint pdata[];
+};
+layout (set = 0, binding = 16) buffer  q_buffer {
+  uint qdata[];
+};
+layout (set = 0, binding = 17) buffer  r_buffer {
+  uint rdata[];
+};
+layout (set = 0, binding = 18) buffer  s_buffer {
+  uint sdata[];
+};
+layout (set = 0, binding = 19) buffer  t_buffer {
+  uint tdata[];
+};
+layout (set = 0, binding = 20) buffer  u_buffer {
+  uint udata[];
+};
+layout (set = 0, binding = 21) buffer  v_buffer {
+  uint vdata[];
+};
+layout (set = 0, binding = 22) buffer  w_buffer {
+  uint wdata[];
+};
+layout (set = 0, binding = 23) buffer  x_buffer {
+  uint xdata[];
+};
+
+void main() {
+  uint index = gl_GlobalInvocationID.x;
+  xdata[index] = adata[index] + bdata[index] + cdata[index] 
+  + ddata[index]
+  + edata[index]
+  + fdata[index]
+  + gdata[index]
+  + hdata[index]
+  + idata[index]
+  + jdata[index]
+  + kdata[index]
+  + ldata[index]
+  + mdata[index]
+  + ndata[index]
+  + odata[index]
+  + pdata[index]
+  + qdata[index]
+  + rdata[index]
+  + sdata[index]
+  + tdata[index]
+  + udata[index]
+  + vdata[index]
+  + wdata[index]
+  + xdata[index]
+  ;
+}

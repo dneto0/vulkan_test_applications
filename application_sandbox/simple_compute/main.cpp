@@ -18,7 +18,7 @@
 #include "vulkan_helpers/vulkan_application.h"
 
 uint32_t compute_shader[] =
-#include "add_numbers4.comp.spv"
+#include "add_numbers23.comp.spv"
     ;
 
 // This sample will create N storage buffers, and bind them to successive
@@ -29,7 +29,7 @@ int main_entry(const entry::entry_data* data) {
   vulkan::VulkanApplication app(data->root_allocator, data->log.get(), data);
   vulkan::VkDevice& device = app.device();
 
-  const uint32_t kNumStorageBuffers = 5;  // The total number of storage buffers
+  const uint32_t kNumStorageBuffers = 24;  // The total number of storage buffers
   const uint32_t kOutputBuffer =
       kNumStorageBuffers - 1;  // Which buffer contains the "output" data
   containers::unique_ptr<vulkan::VulkanApplication::Buffer>
