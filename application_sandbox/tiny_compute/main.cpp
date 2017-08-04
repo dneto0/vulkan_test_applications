@@ -21,6 +21,8 @@
 uint32_t compute_shader[] =
 #if USE_CL
 #include "add_numbers.cl.spv"
+#elif USE_SPVASM
+#include "add_numbers.spvasm.spv"
 #else
 #include "add_numbers.comp.spv"
 #endif
@@ -29,6 +31,10 @@ uint32_t compute_shader[] =
 #if USE_CL
 // clspv does not allow a kernel function to be named "main".
 #define KERNEL_NAME "adder"
+#elif USE_SPVASM
+// Force this to be different so I'm always certain I'm running
+// the right example.
+#define KERNEL_NAME "asmadder"
 #else
 // GLSL requires the shader entry point to be named "main".
 #define KERNEL_NAME "main"
