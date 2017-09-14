@@ -63,6 +63,7 @@ int main_entry(const entry::entry_data* data) {
       kNumStorageBuffers - 1;  // Which buffer contains the "output" data
   containers::unique_ptr<vulkan::VulkanApplication::Buffer>
       storage_buffers[kNumStorageBuffers];
+  containers::unique_ptr<vulkan::VulkanApplication::Buffer> sb;
 
   VkDescriptorSetLayoutBinding binding0{
       static_cast<uint32_t>(0),           // binding
@@ -91,10 +92,15 @@ int main_entry(const entry::entry_data* data) {
     buffer_infos[i] =
         VkDescriptorBufferInfo{*storage_buffers[i], 0, VK_WHOLE_SIZE};
   }
+  sb = app.CreateAndBindDefaultExclusiveHostBuffer(kBufferSize, usage);
+  auto sb_bi = VkDescriptorBufferInfo{*sb, 0, VK_WHOLE_SIZE};
 
   auto compute_descriptor_set = containers::make_unique<vulkan::DescriptorSet>(
       data->root_allocator,
       app.AllocateDescriptorSet({binding0, binding1, binding2}));
+  auto sb_descriptor_set = containers::make_unique<vulkan::DescriptorSet>(
+      data->root_allocator,
+      app.AllocateDescriptorSet({binding0}));
 
   const VkWriteDescriptorSet write_descriptor_set{
       VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,      // sType
@@ -110,11 +116,25 @@ int main_entry(const entry::entry_data* data) {
   };
   device->vkUpdateDescriptorSets(device, 1, &write_descriptor_set, 0, nullptr);
 
+  const VkWriteDescriptorSet write_sb_descriptor_set{
+      VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,      // sType
+      nullptr,                                     // pNext
+      *sb_descriptor_set,                     // dstSet
+      0,                                           // dstBinding
+      0,                                           // dstArrayElement
+      1,  // descriptorCount
+      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,           // descriptorType
+      nullptr,                                     // pImageInfo
+      &sb_bi,                         // pBufferInfo
+      nullptr,                                     // pTexelBufferView
+  };
+  device->vkUpdateDescriptorSets(device, 1, &write_sb_descriptor_set, 0, nullptr);
+
   // Create pipeline
   auto compute_pipeline_layout =
       containers::make_unique<vulkan::PipelineLayout>(
           data->root_allocator,
-          app.CreatePipelineLayout({{binding0, binding1, binding2}}));
+          app.CreatePipelineLayout({{binding0}, {binding0, binding1, binding2}}));
   auto compute_pipeline =
       containers::make_unique<vulkan::VulkanComputePipeline>(
           data->root_allocator,
@@ -146,15 +166,18 @@ int main_entry(const entry::entry_data* data) {
                                *compute_pipeline);
     cmd_buf->vkCmdBindDescriptorSets(
         cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, *compute_pipeline_layout, 0, 1,
+        &sb_descriptor_set->raw_set(), 0, nullptr);
+    cmd_buf->vkCmdBindDescriptorSets(
+        cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, *compute_pipeline_layout, 1, 1,
         &compute_descriptor_set->raw_set(), 0, nullptr);
-    cmd_buf->vkCmdDispatch(cmd_buf, kBufferElements / LOCAL_X_SIZE, 1, 1);
+    cmd_buf->vkCmdDispatch(cmd_buf, 1, 1, 1);
     LOG_ASSERT(==, data->log, VK_SUCCESS,
                app.EndAndSubmitCommandBufferAndWaitForQueueIdle(
                    &cmd_buf, &app.render_queue()));
 
     // Check the output values
     containers::vector<uint32_t> output = vulkan::GetHostVisibleBufferData(
-        data->root_allocator, &*storage_buffers[kOutputBuffer]);
+        data->root_allocator, &*storage_buffers[0]);
     std::ostringstream str;
     str << "Output:";
     for (auto& v : output) {
