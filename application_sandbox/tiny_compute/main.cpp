@@ -14,7 +14,6 @@
 
 
 #include "application_sandbox/sample_application_framework/sample_application.h"
-#include "inputs.h"
 #include "support/entry/entry.h"
 #include "vulkan_helpers/helper_functions.h"
 #include "vulkan_helpers/vulkan_application.h"
@@ -75,7 +74,7 @@ int main_entry(const entry::entry_data* data) {
   containers::vector<VkDescriptorBufferInfo> buffer_infos(data->root_allocator);
   buffer_infos.resize(kNumStorageBuffers);
   // Both input and output buffers have 512 32-bit integers.
-  const uint32_t kBufferElements = 8;
+  const uint32_t kBufferElements = 100;
   const uint32_t kBufferSize = kBufferElements * sizeof(uint32_t);
 
   VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
@@ -105,6 +104,15 @@ int main_entry(const entry::entry_data* data) {
   };
   device->vkUpdateDescriptorSets(device, 1, &write_descriptor_set, 0, nullptr);
 
+  // Set up specialization constants for the x, y, and z dimensions of workgroup
+  // size.
+  VkSpecializationMapEntry specialization_map[] = {
+      {0, 0, 4}, {1, 4, 4}, {2, 8, 4}};
+  uint32_t spec_values[] = {2, 3, 7};
+
+  auto specialization_info = VkSpecializationInfo{
+      3, specialization_map, sizeof(spec_values), spec_values};
+
   // Create pipeline
   auto compute_pipeline_layout =
       containers::make_unique<vulkan::PipelineLayout>(
@@ -117,7 +125,7 @@ int main_entry(const entry::entry_data* data) {
               VkShaderModuleCreateInfo{
                   VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, nullptr, 0,
                   sizeof(compute_shader), compute_shader},
-              KERNEL_NAME));
+              KERNEL_NAME, &specialization_info));
   {
     // 1. vkCmdDispatch
     auto cmd_buf = app.GetCommandBuffer();
@@ -126,7 +134,7 @@ int main_entry(const entry::entry_data* data) {
     // Set inital values for the in-buffer and clear the out-buffer
     containers::vector<uint32_t> initial_buffer_values(data->root_allocator);
     initial_buffer_values.insert(initial_buffer_values.begin(), kBufferElements,
-                                 9);
+                                 999);
     for (size_t i = 0; i < kNumStorageBuffers; ++i) {
       app.FillHostVisibleBuffer(
           &*storage_buffers[i],

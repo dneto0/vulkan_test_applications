@@ -1,16 +1,25 @@
 #version 430
 
-layout (local_size_x = 2, local_size_y = 3, local_size_z = 7) in;
+// The host program will override this with values 2, 3, 7
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 layout (local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
 
 layout (set = 0, binding = 0) buffer datOut0 {
-uint	workgroup_x;
-uint	workgroup_y;
-uint	workgroup_z;
+  uint data[];
 } outData;
 
 void main() {
-   outData.workgroup_x = gl_WorkGroupSize.x;
-   outData.workgroup_y = gl_WorkGroupSize.y;
-   outData.workgroup_z = gl_WorkGroupSize.z;
+   uvec3 copy = gl_WorkGroupSize;
+   uint index =
+       gl_GlobalInvocationID.x +
+       copy.x * (gl_GlobalInvocationID.y + copy.y * gl_GlobalInvocationID.z);
+
+   // This invocation will write its own index.
+   // Overall we'll fill entries 0 through 41.
+   outData.data[index] = index;
+
+   // Observe the workgroup size specialization.
+   outData.data[50] = copy.x;
+   outData.data[51] = copy.y;
+   outData.data[52] = copy.z;
 }
