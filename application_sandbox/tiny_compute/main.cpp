@@ -46,8 +46,8 @@ uint32_t compute_shader[] =
 
 
 enum {
-  // We have use input buffers, and one output buffer.
-  kNumStorageBuffers = 3
+  // We only have an output buffer
+  kNumStorageBuffers = 1
 };
 
 // This sample will create N storage buffers, and bind them to successive
@@ -63,7 +63,6 @@ int main_entry(const entry::entry_data* data) {
       kNumStorageBuffers - 1;  // Which buffer contains the "output" data
   containers::unique_ptr<vulkan::VulkanApplication::Buffer>
       storage_buffers[kNumStorageBuffers];
-  containers::unique_ptr<vulkan::VulkanApplication::Buffer> sb;
 
   VkDescriptorSetLayoutBinding binding0{
       static_cast<uint32_t>(0),           // binding
@@ -72,15 +71,11 @@ int main_entry(const entry::entry_data* data) {
       VK_SHADER_STAGE_COMPUTE_BIT,        // stageFlags
       nullptr,                            // pImmutableSamplers
   };
-  VkDescriptorSetLayoutBinding binding1 = binding0;
-  binding1.binding = 1;
-  VkDescriptorSetLayoutBinding binding2 = binding0;
-  binding2.binding = 2;
 
   containers::vector<VkDescriptorBufferInfo> buffer_infos(data->root_allocator);
   buffer_infos.resize(kNumStorageBuffers);
   // Both input and output buffers have 512 32-bit integers.
-  const uint32_t kBufferElements = 512;
+  const uint32_t kBufferElements = 8;
   const uint32_t kBufferSize = kBufferElements * sizeof(uint32_t);
 
   VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
@@ -92,15 +87,9 @@ int main_entry(const entry::entry_data* data) {
     buffer_infos[i] =
         VkDescriptorBufferInfo{*storage_buffers[i], 0, VK_WHOLE_SIZE};
   }
-  sb = app.CreateAndBindDefaultExclusiveHostBuffer(kBufferSize, usage);
-  auto sb_bi = VkDescriptorBufferInfo{*sb, 0, VK_WHOLE_SIZE};
 
   auto compute_descriptor_set = containers::make_unique<vulkan::DescriptorSet>(
-      data->root_allocator,
-      app.AllocateDescriptorSet({binding0, binding1, binding2}));
-  auto sb_descriptor_set = containers::make_unique<vulkan::DescriptorSet>(
-      data->root_allocator,
-      app.AllocateDescriptorSet({binding0}));
+      data->root_allocator, app.AllocateDescriptorSet({binding0}));
 
   const VkWriteDescriptorSet write_descriptor_set{
       VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,      // sType
@@ -116,25 +105,10 @@ int main_entry(const entry::entry_data* data) {
   };
   device->vkUpdateDescriptorSets(device, 1, &write_descriptor_set, 0, nullptr);
 
-  const VkWriteDescriptorSet write_sb_descriptor_set{
-      VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,      // sType
-      nullptr,                                     // pNext
-      *sb_descriptor_set,                     // dstSet
-      0,                                           // dstBinding
-      0,                                           // dstArrayElement
-      1,  // descriptorCount
-      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,           // descriptorType
-      nullptr,                                     // pImageInfo
-      &sb_bi,                         // pBufferInfo
-      nullptr,                                     // pTexelBufferView
-  };
-  device->vkUpdateDescriptorSets(device, 1, &write_sb_descriptor_set, 0, nullptr);
-
   // Create pipeline
   auto compute_pipeline_layout =
       containers::make_unique<vulkan::PipelineLayout>(
-          data->root_allocator,
-          app.CreatePipelineLayout({{binding0}, {binding0, binding1, binding2}}));
+          data->root_allocator, app.CreatePipelineLayout({{binding0}}));
   auto compute_pipeline =
       containers::make_unique<vulkan::VulkanComputePipeline>(
           data->root_allocator,
@@ -152,7 +126,7 @@ int main_entry(const entry::entry_data* data) {
     // Set inital values for the in-buffer and clear the out-buffer
     containers::vector<uint32_t> initial_buffer_values(data->root_allocator);
     initial_buffer_values.insert(initial_buffer_values.begin(), kBufferElements,
-                                 1);
+                                 9);
     for (size_t i = 0; i < kNumStorageBuffers; ++i) {
       app.FillHostVisibleBuffer(
           &*storage_buffers[i],
@@ -166,9 +140,6 @@ int main_entry(const entry::entry_data* data) {
                                *compute_pipeline);
     cmd_buf->vkCmdBindDescriptorSets(
         cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, *compute_pipeline_layout, 0, 1,
-        &sb_descriptor_set->raw_set(), 0, nullptr);
-    cmd_buf->vkCmdBindDescriptorSets(
-        cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, *compute_pipeline_layout, 1, 1,
         &compute_descriptor_set->raw_set(), 0, nullptr);
     cmd_buf->vkCmdDispatch(cmd_buf, 1, 1, 1);
     LOG_ASSERT(==, data->log, VK_SUCCESS,
