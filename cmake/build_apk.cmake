@@ -450,7 +450,7 @@ function(add_shader_library target)
             OUTPUT ${output_file}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             COMMENT "Compiling SPIR-V binary ${shader}"
-            COMMAND ${CMAKE_SPIRV_ASSEMBLER} -o ${output_file}.spv ${temp}
+            COMMAND ${CMAKE_SPIRV_ASSEMBLER} --target-env vulkan1.0 -o ${output_file}.spv ${temp}
             COMMAND ${PYTHON_EXECUTABLE}
                ${VulkanTestApplications_SOURCE_DIR}/cmake/convert_spv_to_c.py
                -o ${output_file}
