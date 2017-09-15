@@ -4,13 +4,14 @@ layout (local_size_x = 2, local_size_y = 3, local_size_z = 7) in;
 layout (local_size_x_id = 0, local_size_y_id = 1, local_size_z_id = 2) in;
 
 layout (set = 0, binding = 0) buffer datOut0 {
-uint	workgroup_x;
-uint	workgroup_y;
-uint	workgroup_z;
+  uint data[];
 } outData;
 
+uvec3 copy;
+
 void main() {
-   outData.workgroup_x = gl_WorkGroupSize.x;
-   outData.workgroup_y = gl_WorkGroupSize.y;
-   outData.workgroup_z = gl_WorkGroupSize.z;
+   copy = gl_WorkGroupSize;
+   outData.data[0] = copy.x;
+   outData.data[1] = copy.y;
+   outData.data[2] = copy.z;
 }

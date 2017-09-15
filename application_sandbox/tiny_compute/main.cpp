@@ -36,8 +36,9 @@ uint32_t compute_shader[] =
 #elif USE_SPVASM
 // Use a different entry point name to be sure I'm running
 // the right example.
-#define KERNEL_NAME "asmadder"
+#define KERNEL_NAME "main"
 #define EXTENSIONS  {"VK_KHR_storage_buffer_storage_class", "VK_KHR_variable_pointers"}
+//#define EXTENSIONS  {}
 #else
 // GLSL requires the shader entry point to be named "main".
 #define KERNEL_NAME "main"
