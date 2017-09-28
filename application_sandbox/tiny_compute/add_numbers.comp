@@ -30,7 +30,13 @@ layout (set = 0, binding = 2) buffer datOut {
   uint data[];
 } C;
 
+layout (set = 0, binding = 3) buffer Pods {
+  uint m;
+  uint n;
+  uint o;
+} Me;
+
 void main() {
   uint index = gl_GlobalInvocationID.x;
-  C.data[index] = A.data[index] + B.data[index];
+  C.data[index] = A.data[index] + B.data[index] + Me.m + Me.n + Me.o;
 }

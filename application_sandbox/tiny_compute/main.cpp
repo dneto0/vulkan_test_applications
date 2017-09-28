@@ -62,7 +62,7 @@ int main_entry(const entry::entry_data* data) {
   const uint32_t kOutputBuffer =
       kNumStorageBuffers - 1;  // Which buffer contains the "output" data
   containers::unique_ptr<vulkan::VulkanApplication::Buffer>
-      storage_buffers[kNumStorageBuffers];
+      storage_buffers[kNumStorageBuffers + 1]; // +1 for pod
 
   VkDescriptorSetLayoutBinding binding0{
       static_cast<uint32_t>(0),           // binding
@@ -75,9 +75,16 @@ int main_entry(const entry::entry_data* data) {
   binding1.binding = 1;
   VkDescriptorSetLayoutBinding binding2 = binding0;
   binding2.binding = 2;
+  VkDescriptorSetLayoutBinding binding3 = binding0;
+  binding3.binding = 3;
+
+
+  struct Pod { uint32_t m, n, o; };
+
+  Pod pod_data{10,20,30};
 
   containers::vector<VkDescriptorBufferInfo> buffer_infos(data->root_allocator);
-  buffer_infos.resize(kNumStorageBuffers);
+  buffer_infos.resize(kNumStorageBuffers + 1);
   // Both input and output buffers have 512 32-bit integers.
   const uint32_t kBufferElements = 512;
   const uint32_t kBufferSize = kBufferElements * sizeof(uint32_t);
@@ -91,10 +98,15 @@ int main_entry(const entry::entry_data* data) {
     buffer_infos[i] =
         VkDescriptorBufferInfo{*storage_buffers[i], 0, VK_WHOLE_SIZE};
   }
+  // For Pod
+  storage_buffers[3] =
+      app.CreateAndBindDefaultExclusiveHostBuffer(sizeof(pod_data), usage);
+  buffer_infos[3] =
+      VkDescriptorBufferInfo{*storage_buffers[3], 0, sizeof(pod_data)};
 
   auto compute_descriptor_set = containers::make_unique<vulkan::DescriptorSet>(
       data->root_allocator,
-      app.AllocateDescriptorSet({binding0, binding1, binding2}));
+      app.AllocateDescriptorSet({binding0, binding1, binding2, binding3}));
 
   const VkWriteDescriptorSet write_descriptor_set{
       VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,      // sType
@@ -114,7 +126,7 @@ int main_entry(const entry::entry_data* data) {
   auto compute_pipeline_layout =
       containers::make_unique<vulkan::PipelineLayout>(
           data->root_allocator,
-          app.CreatePipelineLayout({{binding0, binding1, binding2}}));
+          app.CreatePipelineLayout({{binding0, binding1, binding2, binding3}}));
   auto compute_pipeline =
       containers::make_unique<vulkan::VulkanComputePipeline>(
           data->root_allocator,
@@ -137,10 +149,24 @@ int main_entry(const entry::entry_data* data) {
       app.FillHostVisibleBuffer(
           &*storage_buffers[i],
           reinterpret_cast<const char*>(initial_buffer_values.data()),
-          initial_buffer_values.size() * sizeof(uint32_t), 0, &cmd_buf,
+          initial_buffer_values.size() * sizeof(uint32_t), 
+          0, &cmd_buf,
           VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
     }
+#if 1
+    // Fill Pod
+    app.FillHostVisibleBuffer(
+        &*storage_buffers[3], 
+
+        reinterpret_cast<const char*>(&pod_data),
+        sizeof(pod_data), 
+        
+        0, &cmd_buf,
+        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+#endif
+
     // Call dispatch
     cmd_buf->vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE,
                                *compute_pipeline);

@@ -443,7 +443,7 @@ function(add_shader_library target)
             DEPENDS ${shader} ${FILE_DEPS}
               ${VulkanTestApplications_SOURCE_DIR}/cmake/generate_cmake_dep.py
             # TODO(dneto): Handle include dependencies and include directories.
-            COMMAND ${CMAKE_CL_COMPILER} -mfmt=c -o ${output_file} ${temp}
+            COMMAND ${CMAKE_CL_COMPILER} -mfmt=c -cluster-pod-kernel-args -o ${output_file} ${temp}
           )
         elseif(${suffix} MATCHES ".spvasm")
           add_custom_command (
