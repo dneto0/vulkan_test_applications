@@ -17,6 +17,8 @@ add_shader_library(tiny_wrap_shaders
     wrap.comp
     wrap_call.spvasm
     wrap_inline.spvasm
+    wrap_bufferblock_call.spvasm
+    wrap_bufferblock_inline.spvasm
   SHADER_DEPS
     shader_library
 )
@@ -47,3 +49,21 @@ add_vulkan_sample_application(tiny_wrap_inline_asm
     tiny_wrap_shaders
 )
 set_target_properties(tiny_wrap_inline_asm PROPERTIES COMPILE_FLAGS "-DUSE_INLINE_ASM")
+
+add_vulkan_sample_application(tiny_wrap_bufferblock_call_asm
+  SOURCES main.cpp
+  LIBS
+    vulkan_helpers
+  SHADERS
+    tiny_wrap_shaders
+)
+set_target_properties(tiny_wrap_bufferblock_call_asm PROPERTIES COMPILE_FLAGS "-DUSE_BUFFERBLOCK_CALL_ASM")
+
+add_vulkan_sample_application(tiny_wrap_bufferblock_inline_asm
+  SOURCES main.cpp
+  LIBS
+    vulkan_helpers
+  SHADERS
+    tiny_wrap_shaders
+)
+set_target_properties(tiny_wrap_bufferblock_inline_asm PROPERTIES COMPILE_FLAGS "-DUSE_BUFFERBLOCK_INLINE_ASM")

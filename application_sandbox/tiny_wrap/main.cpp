@@ -35,6 +35,17 @@ uint32_t compute_shader[] =
 #include "wrap_inline.spvasm.spv"
 #define KERNEL_NAME "write_inline"
 #define EXTENSIONS  {"VK_KHR_storage_buffer_storage_class"}
+
+#elif defined(USE_BUFFERBLOCK_CALL_ASM)
+#include "wrap_bufferblock_call.spvasm.spv"
+#define KERNEL_NAME "write_call"
+#define EXTENSIONS  {}
+
+#elif defined(USE_BUFFERBLOCK_INLINE_ASM)
+#include "wrap_inline.spvasm.spv"
+#define KERNEL_NAME "write_inline"
+#define EXTENSIONS  {}
+
 #else
 #error "misconfigured"
 #endif
