@@ -20,6 +20,7 @@ layout (set = 0, binding = 0) buffer dataOut {
 } A;
 
 void main() {
-  uint index = gl_GlobalInvocationID.x;
-  A.data[index] = vec4(22, 23, 24, 25);
+  vec4 value;
+  value.w = 1000.0;
+  A.data[0] = value;
 }

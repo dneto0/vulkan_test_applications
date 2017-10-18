@@ -22,29 +22,21 @@
 uint32_t compute_shader[] =
 
 #if defined(USE_GLSL)
-#include "wrap.comp.spv"
+#include "write_glsl.comp.spv"
 #define KERNEL_NAME "main"
 #define EXTENSIONS  {}
 
-#elif defined(USE_CALL_ASM)
-#include "wrap_call.spvasm.spv"
-#define KERNEL_NAME "write_call"
+#elif defined(USE_ASM)
+#include "write_w.spvasm.spv"
+#define KERNEL_NAME "foo"
 #define EXTENSIONS  {"VK_KHR_storage_buffer_storage_class"}
 
-#elif defined(USE_INLINE_ASM)
-#include "wrap_inline.spvasm.spv"
-#define KERNEL_NAME "write_inline"
+
+#elif defined(USE_ASM0)
+#include "write_w0.spvasm.spv"
+#define KERNEL_NAME "foo0"
 #define EXTENSIONS  {"VK_KHR_storage_buffer_storage_class"}
 
-#elif defined(USE_BUFFERBLOCK_CALL_ASM)
-#include "wrap_bufferblock_call.spvasm.spv"
-#define KERNEL_NAME "write_call"
-#define EXTENSIONS  {}
-
-#elif defined(USE_BUFFERBLOCK_INLINE_ASM)
-#include "wrap_inline.spvasm.spv"
-#define KERNEL_NAME "write_inline"
-#define EXTENSIONS  {}
 
 #else
 #error "misconfigured"
