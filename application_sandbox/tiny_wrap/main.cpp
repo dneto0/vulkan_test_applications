@@ -37,6 +37,11 @@ uint32_t compute_shader[] =
 #define KERNEL_NAME "foo0"
 #define EXTENSIONS  {"VK_KHR_storage_buffer_storage_class"}
 
+#elif defined(USE_ASMNULL)
+#include "write_wnull.spvasm.spv"
+#define KERNEL_NAME "foonull"
+#define EXTENSIONS  {"VK_KHR_storage_buffer_storage_class"}
+
 
 #else
 #error "misconfigured"

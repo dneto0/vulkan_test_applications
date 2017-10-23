@@ -17,6 +17,7 @@ add_shader_library(tiny_wrap_shaders
     write_glsl.comp
     write_w.spvasm
     write_w0.spvasm
+    write_wnull.spvasm
   SHADER_DEPS
     shader_library
 )
@@ -47,3 +48,12 @@ add_vulkan_sample_application(tiny_wrap_write_w0
     tiny_wrap_shaders
 )
 set_target_properties(tiny_wrap_write_w0 PROPERTIES COMPILE_FLAGS "-DUSE_ASM0")
+
+add_vulkan_sample_application(tiny_wrap_write_wnull
+  SOURCES main.cpp
+  LIBS
+    vulkan_helpers
+  SHADERS
+    tiny_wrap_shaders
+)
+set_target_properties(tiny_wrap_write_wnull PROPERTIES COMPILE_FLAGS "-DUSE_ASMNULL")
