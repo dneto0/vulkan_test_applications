@@ -119,8 +119,13 @@ int main_entry(const entry::entry_data* data) {
 
     // Set inital values for the in-buffer.
     containers::vector<ScalarType> initial_buffer_values(data->root_allocator);
+#if 0
     initial_buffer_values.insert(initial_buffer_values.begin(), kBufferScalarCount,
                                  kInitValue);
+#endif
+    for (int i = 0; i < kBufferScalarCount ; i++) {
+      initial_buffer_values.push_back(float(i));
+    }
     app.FillHostVisibleBuffer(
         &*storage_buffer1,
         reinterpret_cast<const char*>(initial_buffer_values.data()),
