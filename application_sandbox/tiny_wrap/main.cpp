@@ -22,29 +22,14 @@
 uint32_t compute_shader[] =
 
 #if defined(USE_GLSL)
-#include "wrap.comp.spv"
+#include "copy_struct.comp.spv"
 #define KERNEL_NAME "main"
 #define EXTENSIONS  {}
 
-#elif defined(USE_CALL_ASM)
-#include "wrap_call.spvasm.spv"
-#define KERNEL_NAME "write_call"
-#define EXTENSIONS  {"VK_KHR_storage_buffer_storage_class"}
-
-#elif defined(USE_INLINE_ASM)
-#include "wrap_inline.spvasm.spv"
-#define KERNEL_NAME "write_inline"
-#define EXTENSIONS  {"VK_KHR_storage_buffer_storage_class"}
-
-#elif defined(USE_BUFFERBLOCK_CALL_ASM)
-#include "wrap_bufferblock_call.spvasm.spv"
-#define KERNEL_NAME "write_call"
-#define EXTENSIONS  {}
-
-#elif defined(USE_BUFFERBLOCK_INLINE_ASM)
-#include "wrap_inline.spvasm.spv"
-#define KERNEL_NAME "write_inline"
-#define EXTENSIONS  {}
+#elif defined(USE_ASM)
+#include "copy_struct.spvasm.spv"
+#define KERNEL_NAME "foo"
+#define EXTENSIONS  {"VK_KHR_storage_buffer_storage_class", "VK_KHR_variable_pointers"}
 
 #else
 #error "misconfigured"
@@ -65,8 +50,9 @@ int main_entry(const entry::entry_data* data) {
   using ScalarType = float;
   const uint32_t kVecElemCount = 4;
   const ScalarType kInitValue = 7.0;
-  const uint32_t kBufferElements = 4;
-  const uint32_t kInvocationCount = 1;
+  const ScalarType kClearValue = 99.0;
+  const uint32_t kBufferElements = 40;
+  const uint32_t kInvocationCount = 40;
   const uint32_t kBufferScalarCount = kBufferElements * kVecElemCount;
   const uint32_t kBufferSize = kBufferScalarCount * sizeof(ScalarType);
 
@@ -75,10 +61,15 @@ int main_entry(const entry::entry_data* data) {
                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
   //containers::unique_ptr<vulkan::VulkanApplication::Buffer> storage_buffer =
-  auto storage_buffer =
+  auto storage_buffer0 =
+      app.CreateAndBindDefaultExclusiveHostBuffer(kBufferSize, usage);
+  auto storage_buffer1 =
       app.CreateAndBindDefaultExclusiveHostBuffer(kBufferSize, usage);
 
-  VkDescriptorBufferInfo buffer_info{*(storage_buffer.get()), 0, VK_WHOLE_SIZE};
+  VkDescriptorBufferInfo buffer_info[2] = {
+      {*(storage_buffer0.get()), 0, VK_WHOLE_SIZE},
+      {*(storage_buffer1.get()), 0, VK_WHOLE_SIZE},
+  };
 
   VkDescriptorSetLayoutBinding binding0{
       0u,                                 // binding
@@ -87,9 +78,11 @@ int main_entry(const entry::entry_data* data) {
       VK_SHADER_STAGE_COMPUTE_BIT,        // stageFlags
       nullptr,                            // pImmutableSamplers
   };
+  VkDescriptorSetLayoutBinding binding1 = binding0;
+  binding1.binding = 1u;
 
   auto compute_descriptor_set = containers::make_unique<vulkan::DescriptorSet>(
-      data->root_allocator, app.AllocateDescriptorSet({binding0}));
+      data->root_allocator, app.AllocateDescriptorSet({binding0, binding1}));
 
   const VkWriteDescriptorSet write_descriptor_set{
       VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,      // sType
@@ -97,10 +90,10 @@ int main_entry(const entry::entry_data* data) {
       *compute_descriptor_set,                     // dstSet
       0,                                           // dstBinding
       0,                                           // dstArrayElement
-      1,                                           // descriptorCount
+      2,                                           // descriptorCount
       VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,           // descriptorType
       nullptr,                                     // pImageInfo
-      &buffer_info,                                // pBufferInfo
+      buffer_info,                                 // pBufferInfo
       nullptr,                                     // pTexelBufferView
   };
   device->vkUpdateDescriptorSets(device, 1, &write_descriptor_set, 0, nullptr);
@@ -109,7 +102,7 @@ int main_entry(const entry::entry_data* data) {
   auto compute_pipeline_layout =
       containers::make_unique<vulkan::PipelineLayout>(
           data->root_allocator,
-          app.CreatePipelineLayout({{binding0}}));
+          app.CreatePipelineLayout({{binding0, binding1}}));
   auto compute_pipeline =
       containers::make_unique<vulkan::VulkanComputePipeline>(
           data->root_allocator,
@@ -124,14 +117,26 @@ int main_entry(const entry::entry_data* data) {
     auto cmd_buf = app.GetCommandBuffer();
     app.BeginCommandBuffer(&cmd_buf);
 
-    // Set inital values for the in-buffer and clear the out-buffer
+    // Set inital values for the in-buffer.
     containers::vector<ScalarType> initial_buffer_values(data->root_allocator);
     initial_buffer_values.insert(initial_buffer_values.begin(), kBufferScalarCount,
                                  kInitValue);
     app.FillHostVisibleBuffer(
-        &*storage_buffer,
+        &*storage_buffer1,
         reinterpret_cast<const char*>(initial_buffer_values.data()),
         initial_buffer_values.size() * sizeof(uint32_t), 0, &cmd_buf,
+        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+    // Clear inital values for the out-buffer.
+    containers::vector<ScalarType> initial_buffer_clear_values(
+        data->root_allocator);
+    initial_buffer_clear_values.insert(initial_buffer_clear_values.begin(),
+                                       kBufferScalarCount, kClearValue);
+    app.FillHostVisibleBuffer(
+        &*storage_buffer0,
+        reinterpret_cast<const char*>(initial_buffer_clear_values.data()),
+        initial_buffer_clear_values.size() * sizeof(uint32_t), 0, &cmd_buf,
         VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
@@ -148,12 +153,12 @@ int main_entry(const entry::entry_data* data) {
 
     // Check the output values
     containers::vector<uint32_t> output_raw = vulkan::GetHostVisibleBufferData(
-        data->root_allocator, &*storage_buffer);
+        data->root_allocator, &*storage_buffer0);
     containers::vector<ScalarType> output(output_raw.size(), data->root_allocator);
     std::memcpy(output.data(), output_raw.data(), output_raw.size() * sizeof(ScalarType));
 
     std::ostringstream str;
-    str << "Output:";
+    str << "Output: " << KERNEL_NAME;
     for (auto& v : output) {
       str << " " << v;
     }

@@ -12,58 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_shader_library(tiny_wrap_shaders
+add_shader_library(copy_struct_shaders
   SOURCES
-    wrap.comp
-    wrap_call.spvasm
-    wrap_inline.spvasm
-    wrap_bufferblock_call.spvasm
-    wrap_bufferblock_inline.spvasm
+    copy_struct.comp
+    copy_struct.spvasm
   SHADER_DEPS
     shader_library
 )
 
-add_vulkan_sample_application(tiny_wrap_glsl
+add_vulkan_sample_application(copy_struct_glsl
   SOURCES main.cpp
   LIBS
     vulkan_helpers
   SHADERS
-    tiny_wrap_shaders
+    copy_struct_shaders
 )
-set_target_properties(tiny_wrap_glsl PROPERTIES COMPILE_FLAGS "-DUSE_GLSL")
+set_target_properties(copy_struct_glsl PROPERTIES COMPILE_FLAGS "-DUSE_GLSL")
 
-add_vulkan_sample_application(tiny_wrap_call_asm
+add_vulkan_sample_application(copy_struct_asm
   SOURCES main.cpp
   LIBS
     vulkan_helpers
   SHADERS
-    tiny_wrap_shaders
+    copy_struct_shaders
 )
-set_target_properties(tiny_wrap_call_asm PROPERTIES COMPILE_FLAGS "-DUSE_CALL_ASM")
-
-add_vulkan_sample_application(tiny_wrap_inline_asm
-  SOURCES main.cpp
-  LIBS
-    vulkan_helpers
-  SHADERS
-    tiny_wrap_shaders
-)
-set_target_properties(tiny_wrap_inline_asm PROPERTIES COMPILE_FLAGS "-DUSE_INLINE_ASM")
-
-add_vulkan_sample_application(tiny_wrap_bufferblock_call_asm
-  SOURCES main.cpp
-  LIBS
-    vulkan_helpers
-  SHADERS
-    tiny_wrap_shaders
-)
-set_target_properties(tiny_wrap_bufferblock_call_asm PROPERTIES COMPILE_FLAGS "-DUSE_BUFFERBLOCK_CALL_ASM")
-
-add_vulkan_sample_application(tiny_wrap_bufferblock_inline_asm
-  SOURCES main.cpp
-  LIBS
-    vulkan_helpers
-  SHADERS
-    tiny_wrap_shaders
-)
-set_target_properties(tiny_wrap_bufferblock_inline_asm PROPERTIES COMPILE_FLAGS "-DUSE_BUFFERBLOCK_INLINE_ASM")
+set_target_properties(copy_struct_asm PROPERTIES COMPILE_FLAGS "-DUSE_ASM")
