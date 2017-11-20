@@ -12,16 +12,17 @@ layout (set = 0, binding = 0) buffer outDat {
 } OBuf;
 
 layout (set = 0, binding = 1) buffer inDat {
-  vec4 data[];
+  // vec4 data[];
+  S data[];
 } IBuf;
 
 void main() {
   uint x = gl_GlobalInvocationID.x;
-  vec4 inval = IBuf.data[x];
+  S inval = IBuf.data[x];
   S val;
-  val.a = inval.x;
-  val.b = inval.y;
-  val.c = inval.z;
-  val.d = inval.w;
+  val.a = 1.0; // inval.a;
+  val.b = inval.b;
+  val.c = inval.c + 100;
+  val.d = 3.0; // inval.w;
   OBuf.data[x] = val;
 }
