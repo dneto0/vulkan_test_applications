@@ -3,16 +3,16 @@ typedef struct {
  float a, b, c, d;
 } S;
 
-float4 FromS(S in) {
-  return (float4)(0.0f, in.b, in.c + 100.f, in.d+100.0f);
-}
 
-S ToS(float4 in) {
-  S val = {1.0f, in.y, in.z, 3.0f};
+typedef S InType;
+
+S rep_ends_struct(InType in) {
+  S val = {in.d, in.b, in.c, in.a};
   return val;
 }
 
-kernel void foo(global S* out, global S* in) {
+
+kernel void foo(global S* out, global InType* in) {
   uint i = get_global_id(0);
-  out[i] = ToS(FromS(in[i]));
+  out[i] = rep_ends_struct(in[i]);
 }

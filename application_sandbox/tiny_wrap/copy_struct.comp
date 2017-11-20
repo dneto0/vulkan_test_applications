@@ -20,9 +20,9 @@ void main() {
   uint x = gl_GlobalInvocationID.x;
   S inval = IBuf.data[x];
   S val;
-  val.a = 1.0; // inval.a;
+  val.a = inval.d;
   val.b = inval.b;
-  val.c = inval.c + 100;
-  val.d = 3.0; // inval.w;
+  val.c = inval.c;
+  val.d = inval.a;
   OBuf.data[x] = val;
 }
