@@ -12,28 +12,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_shader_library(copy_struct_shaders
+add_shader_library(stripe_shaders
   SOURCES
-    copy_struct.comp
-    copy_struct.spvasm
+    stripe.comp
+    stripe.cl
+    stripe.spvasm
+    stripe_opt0.spvasm
+    stripe_mem2reg.spvasm
   SHADER_DEPS
     shader_library
 )
 
-add_vulkan_sample_application(copy_struct_glsl
+add_vulkan_sample_application(stripe_glsl
   SOURCES main.cpp
   LIBS
     vulkan_helpers
   SHADERS
-    copy_struct_shaders
+    stripe_shaders
 )
-set_target_properties(copy_struct_glsl PROPERTIES COMPILE_FLAGS "-DUSE_GLSL")
+set_target_properties(stripe_glsl PROPERTIES COMPILE_FLAGS "-DUSE_GLSL")
 
-add_vulkan_sample_application(copy_struct_asm
+add_vulkan_sample_application(stripe_opt0
   SOURCES main.cpp
   LIBS
     vulkan_helpers
   SHADERS
-    copy_struct_shaders
+    stripe_shaders
 )
-set_target_properties(copy_struct_asm PROPERTIES COMPILE_FLAGS "-DUSE_ASM")
+set_target_properties(stripe_opt0 PROPERTIES COMPILE_FLAGS "-DUSE_ASM -Dsrc_opt0")
+
+add_vulkan_sample_application(stripe_mem2reg
+  SOURCES main.cpp
+  LIBS
+    vulkan_helpers
+  SHADERS
+    stripe_shaders
+)
+set_target_properties(stripe_mem2reg PROPERTIES COMPILE_FLAGS "-DUSE_ASM -Dsrc_mem2reg")
+
+add_vulkan_sample_application(stripe_asm
+  SOURCES main.cpp
+  LIBS
+    vulkan_helpers
+  SHADERS
+    stripe_shaders
+)
+set_target_properties(stripe_asm PROPERTIES COMPILE_FLAGS "-DUSE_ASM -Dsrc_asm")

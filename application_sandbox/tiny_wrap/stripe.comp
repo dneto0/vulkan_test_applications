@@ -1,0 +1,17 @@
+#version 450
+
+layout(set = 0, binding = 0) buffer B { float v[]; } Buf;
+
+void main() {
+  int x = int(gl_GlobalInvocationID.x);
+  int transition_base = -3;
+  int transition_shift = 1;
+  int index_shift = 1;
+  int index = x + index_shift;
+  int transition = transition_base + transition_shift;
+  float value = 9.0;
+  if (index > transition) {
+    value = 1.0;
+  }
+  Buf.v[x] = value;
+}

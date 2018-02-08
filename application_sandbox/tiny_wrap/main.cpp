@@ -22,14 +22,21 @@
 uint32_t compute_shader[] =
 
 #if defined(USE_GLSL)
-#include "copy_struct.comp.spv"
+#include "stripe.comp.spv"
 #define KERNEL_NAME "main"
 #define EXTENSIONS  {}
 
 #elif defined(USE_ASM)
-#include "copy_struct.spvasm.spv"
 #define KERNEL_NAME "foo"
 #define EXTENSIONS  {"VK_KHR_storage_buffer_storage_class", "VK_KHR_variable_pointers"}
+
+#if defined(src_asm)
+#include "stripe.spvasm.spv"
+#elif defined(src_opt0)
+#include "stripe_opt0.spvasm.spv"
+#elif defined(src_mem2reg)
+#include "stripe_mem2reg.spvasm.spv"
+#endif
 
 #else
 #error "misconfigured"
@@ -48,7 +55,8 @@ int main_entry(const entry::entry_data* data) {
 
   // Use vec4 elements
   using ScalarType = float;
-  const uint32_t kVecElemCount = 4;
+  //const uint32_t kVecElemCount = 4;
+  const uint32_t kVecElemCount = 1;
   const ScalarType kInitValue = 7.0;
   const ScalarType kClearValue = 99.0;
   const uint32_t kBufferElements = 40;
@@ -63,12 +71,14 @@ int main_entry(const entry::entry_data* data) {
   //containers::unique_ptr<vulkan::VulkanApplication::Buffer> storage_buffer =
   auto storage_buffer0 =
       app.CreateAndBindDefaultExclusiveHostBuffer(kBufferSize, usage);
+#if 0
   auto storage_buffer1 =
       app.CreateAndBindDefaultExclusiveHostBuffer(kBufferSize, usage);
+#endif
 
-  VkDescriptorBufferInfo buffer_info[2] = {
+  VkDescriptorBufferInfo buffer_info[1] = {
       {*(storage_buffer0.get()), 0, VK_WHOLE_SIZE},
-      {*(storage_buffer1.get()), 0, VK_WHOLE_SIZE},
+//      {*(storage_buffer1.get()), 0, VK_WHOLE_SIZE},
   };
 
   VkDescriptorSetLayoutBinding binding0{
@@ -78,11 +88,13 @@ int main_entry(const entry::entry_data* data) {
       VK_SHADER_STAGE_COMPUTE_BIT,        // stageFlags
       nullptr,                            // pImmutableSamplers
   };
+#if 0
   VkDescriptorSetLayoutBinding binding1 = binding0;
   binding1.binding = 1u;
+#endif
 
   auto compute_descriptor_set = containers::make_unique<vulkan::DescriptorSet>(
-      data->root_allocator, app.AllocateDescriptorSet({binding0, binding1}));
+      data->root_allocator, app.AllocateDescriptorSet({binding0}));
 
   const VkWriteDescriptorSet write_descriptor_set{
       VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,      // sType
@@ -90,7 +102,7 @@ int main_entry(const entry::entry_data* data) {
       *compute_descriptor_set,                     // dstSet
       0,                                           // dstBinding
       0,                                           // dstArrayElement
-      2,                                           // descriptorCount
+      1,                                           // descriptorCount
       VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,           // descriptorType
       nullptr,                                     // pImageInfo
       buffer_info,                                 // pBufferInfo
@@ -102,7 +114,7 @@ int main_entry(const entry::entry_data* data) {
   auto compute_pipeline_layout =
       containers::make_unique<vulkan::PipelineLayout>(
           data->root_allocator,
-          app.CreatePipelineLayout({{binding0, binding1}}));
+          app.CreatePipelineLayout({{binding0}}));
   auto compute_pipeline =
       containers::make_unique<vulkan::VulkanComputePipeline>(
           data->root_allocator,
@@ -127,12 +139,13 @@ int main_entry(const entry::entry_data* data) {
       initial_buffer_values.push_back(float(i));
     }
     app.FillHostVisibleBuffer(
-        &*storage_buffer1,
+        &*storage_buffer0,
         reinterpret_cast<const char*>(initial_buffer_values.data()),
         initial_buffer_values.size() * sizeof(uint32_t), 0, &cmd_buf,
         VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
+#if 0
     // Clear inital values for the out-buffer.
     containers::vector<ScalarType> initial_buffer_clear_values(
         data->root_allocator);
@@ -144,6 +157,7 @@ int main_entry(const entry::entry_data* data) {
         initial_buffer_clear_values.size() * sizeof(uint32_t), 0, &cmd_buf,
         VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+#endif
 
     // Call dispatch
     cmd_buf->vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE,
