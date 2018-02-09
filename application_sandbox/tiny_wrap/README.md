@@ -17,6 +17,9 @@ Shader sources:
    stripe.comp:    GLSL version showing essential logic
    stripe.cl:      OpenCL C version, the original motivating example
    stripe.spvasm:  SPIR-V assembly, hand tuned for experimentation
+   `stripe_reg.spvasm`:  SPIR-V assembly, same as stripe.spvasm but
+      passes the computed `%index` value through a 32-bit store-load pair
+      before using it in the signed comparison.
    `stripe_opt0.spvasm`:
       stripe.comp compiled with glslc, no optimizations at all.
       (Same as glslangValidator would do, but adds OpSourceExtension, and

@@ -36,6 +36,8 @@ uint32_t compute_shader[] =
 #include "stripe_opt0.spvasm.spv"
 #elif defined(src_mem2reg)
 #include "stripe_mem2reg.spvasm.spv"
+#elif defined(src_reg)
+#include "stripe_reg.spvasm.spv"
 #endif
 
 #else

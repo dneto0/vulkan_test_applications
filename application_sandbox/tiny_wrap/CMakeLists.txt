@@ -19,6 +19,7 @@ add_shader_library(stripe_shaders
     stripe.spvasm
     stripe_opt0.spvasm
     stripe_mem2reg.spvasm
+    stripe_reg.spvasm
   SHADER_DEPS
     shader_library
 )
@@ -58,3 +59,12 @@ add_vulkan_sample_application(stripe_asm
     stripe_shaders
 )
 set_target_properties(stripe_asm PROPERTIES COMPILE_FLAGS "-DUSE_ASM -Dsrc_asm")
+
+add_vulkan_sample_application(stripe_reg
+  SOURCES main.cpp
+  LIBS
+    vulkan_helpers
+  SHADERS
+    stripe_shaders
+)
+set_target_properties(stripe_reg PROPERTIES COMPILE_FLAGS "-DUSE_ASM -Dsrc_reg")
