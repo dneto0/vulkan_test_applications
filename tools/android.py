@@ -74,8 +74,9 @@ def install_apk(apk_info, program_args):
 
     '''
     adb(['install', '-r', '-g', apk_info.apk_name], program_args)
-    adb(['shell', 'pm', 'grant', apk_info.package_name,
-        'android.permission.WRITE_EXTERNAL_STORAGE'], program_args)
+    if os.environ['APK_PACKAGE'] is None:
+        adb(['shell', 'pm', 'grant', apk_info.package_name,
+            'android.permission.WRITE_EXTERNAL_STORAGE'], program_args)
 
 
 def get_apk_info(apk):
@@ -83,6 +84,9 @@ def get_apk_info(apk):
     given apk."""
     test_name = os.path.splitext(os.path.basename(apk))[0]
     package_name = 'com.example.test.' + test_name
+    if os.environ['APK_PACKAGE'] is not None:
+      package_name = os.environ['APK_PACKAGE']
+      print "Using package name %s" % (package_name)
     activity_name = 'android.app.NativeActivity'
     apk_info = collections.namedtuple(
         'ApkInfo', ['test_name', 'package_name', 'activity_name', 'apk_name'])
